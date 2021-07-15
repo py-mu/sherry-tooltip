@@ -5,5 +5,5 @@
     at 17:27
 """
 from sherry_tooltip.injector import Injector
-
+version = '1.0.0'
 __all__ = ('Injector',)
