@@ -22,7 +22,6 @@ info = {
     'keywords': 'GUI'
 }
 
-
 classifiers = [
     'Development Status :: 3 - Alpha',
     'Intended Audience :: Developers',
@@ -31,7 +30,11 @@ classifiers = [
     'Programming Language :: Python :: 3',
 ]
 
+with open('readme.md', 'r') as f:
+    long_description = f.read()
+
 setup(
+    long_description=long_description,
     platforms=['OS-independent'],
     classifiers=classifiers,
     packages=find_packages(),
