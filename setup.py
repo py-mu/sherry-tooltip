@@ -10,31 +10,25 @@ from setuptools import setup, find_packages
 
 info = {
     'project_urls': {
-        'Documentation': 'https://py-mu.github.io/sherry/',
-        'Funding': 'https://donate.pypi.org',
-        'Source': 'https://github.com/py-mu/sherry',
-        'Tracker': 'https://github.com/py-mu/sherry/issues',
+        'Documentation': 'https://github.com/py-mu/sherry-tooltip'
     },
     'name': 'sherry-tooltip',
     'version': '1.0.0',
-    'description': 'Quickly develop a theme-based qt desktop program',
+    'description': 'Sherry event hook',
     'author': '黄大胆',
     'author_email': '1540235670@qq.com',
-    'url': 'https://github.com/py-mu/sherry',
+    'url': 'https://github.com/py-mu/sherry-tooltip',
     'license': 'Apache',
     'keywords': 'GUI'
 }
 
-# 分类信息
+
 classifiers = [
-    'Development Status :: 4 - Beta',
-    'Intended Audience :: Developers'
-    'License :: OSI Approved :: Apache Software License',
-    'Natural Language :: Chinese',
-    'Operating System :: OS Independent',
-    'Programming Language :: Python',
-    'Programming Language :: Python :: 3.7',
-    'Topic :: Software Development :: Libraries :: Python Modules',
+    'Development Status :: 3 - Alpha',
+    'Intended Audience :: Developers',
+    'Topic :: Software Development :: Build Tools',
+    'License :: OSI Approved :: MIT License',
+    'Programming Language :: Python :: 3',
 ]
 
 setup(
@@ -42,7 +36,7 @@ setup(
     classifiers=classifiers,
     packages=find_packages(),
     include_package_data=True,
-    install_requires=['QtAwesome>=0.7.0', 'PyQt5>=5.12', 'sherry'],
+    install_requires=['sherry'],
     python_requires='>=3.6',
     **info
 )
