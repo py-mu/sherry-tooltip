@@ -4,6 +4,6 @@
     on 2021/7/15
     at 17:27
 """
-from sherry_tooltip.injector import Injector
+from sherry_tooltip.injector import TooltipAgent
 version = '1.0.0'
-__all__ = ('Injector',)
+__all__ = ('TooltipAgent',)
