@@ -8,12 +8,14 @@
 
 from setuptools import setup, find_packages
 
+from sherry_tooltip import version
+
 info = {
     'project_urls': {
         'Documentation': 'https://github.com/py-mu/sherry-tooltip'
     },
     'name': 'sherry-tooltip',
-    'version': '1.0.0',
+    'version': '.'.join(map(str, version)),
     'description': 'Sherry event hook',
     'author': '黄大胆',
     'author_email': '1540235670@qq.com',
