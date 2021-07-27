@@ -5,5 +5,5 @@
     at 17:27
 """
 from sherry_tooltip.injector import TooltipAgent
-version = '1.0.0'
-__all__ = ('TooltipAgent',)
+version = (1, 0, 8)
+__all__ = ('TooltipAgent', 'version')

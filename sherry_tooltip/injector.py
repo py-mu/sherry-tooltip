@@ -28,7 +28,7 @@ class TooltipAgent(BaseAgent):
         def graft(widget, event):
             if event.type() == QEvent.ToolTip and widget.toolTip():
                 tooltip = Badge(source=CustomTooltip, return_class=True)
-                tooltip.showText(event.globalPos(), "这是重载后的 tooltip", widget, QRect(), widget.toolTipDuration())
+                tooltip.showText(event.globalPos(), widget.toolTip(), widget, QRect(), widget.toolTipDuration())
                 return True
             return primeval_event_function(widget, event)
 

@@ -4,54 +4,172 @@
     on 2021/7/16
     at 16:39
 """
+import math
+from time import time
+from typing import Union
 
-from PyQt5.QtCore import QPoint, QRect, QEvent, QObject, QTimerEvent, QBasicTimer, Qt
-from PyQt5.QtGui import QPalette, QFont, QScreen, QPaintEvent, QMouseEvent, QResizeEvent, QKeyEvent, QGuiApplication
-from PyQt5.QtWidgets import QWidget, QToolTip, QStyle, QStylePainter, QStyleOptionFrame, \
-    QStyleHintReturnMask, QStyleOption, QApplication, QDialog
+from PyQt5.QtCore import QPoint, QRect, QEvent, QBasicTimer, Qt, QSize, QCoreApplication
+from PyQt5.QtGui import QGuiApplication, \
+    QFontMetrics, QPainter, QPainterPath
+from PyQt5.QtWidgets import QToolTip, QStyle, QStylePainter, QStyleOptionFrame, \
+    QStyleHintReturnMask, QStyleOption, QApplication, QDialog, QHBoxLayout, QLabel
+
+
+class TooltipLabel(QLabel):
+    triangle_width = 10
+    triangle_height = 8.66
+    label_radius = 4
+    top_left, top, top_right, bottom_left, bottom, bottom_right, \
+    left_top, left, left_bottom, right_top, right, right_bottom = range(12)
+    direct = top
+
+    def setDirection(self, direct):
+        self.direct = direct
+
+    def set_triangle_width(self, width):
+        self.triangle_width = width
+        self.triangle_height = math.sqrt(width ** 2 - (width / 2) ** 2)
+
+    def paintEvent(self, event):
+        painter = QStylePainter(self)
+        painter.setRenderHint(QPainter.Antialiasing, True)
+        opt = QStyleOptionFrame()
+        opt.initFrom(self)
+
+        painter.drawPrimitive(QStyle.PE_PanelTipLabel, opt)
+        painter.setPen(Qt.NoPen)
+        painter.setBrush(opt.palette.color(self.backgroundRole()))
+
+        triangle_height = self.triangle_height
+        start_map = {
+            self.bottom: self.width() / 2 - self.triangle_width / 2,
+            self.bottom_left: self.triangle_width + self.triangle_width,
+            self.bottom_right: self.width() - self.triangle_width * 3,
+            self.left: self.height() / 2 - self.triangle_width / 2,
+            self.left_top: self.triangle_width * 2,
+            self.left_bottom: self.height() - self.triangle_width * 3,
+        }
+        temp = {
+            self.top: start_map[self.bottom],
+            self.top_left: start_map[self.bottom_left],
+            self.top_right: start_map[self.bottom_right],
+            self.right: start_map[self.left],
+            self.right_top: start_map[self.left_top],
+            self.right_bottom: start_map[self.left_bottom],
+        }
+        start_map.update(temp)
+        p_path = []
+        # 显示在上面 tips show on top.
+        start = start_map.get(self.direct)
+        if self.direct in (self.top_left, self.top_right, self.top):
+            p_path.append((start, self.height() - self.triangle_width))
+            p_path.append((start + self.triangle_width / 2, self.height() - self.triangle_width + triangle_height))
+            p_path.append((start + self.triangle_width, self.height() - self.triangle_width))
+        # 显示在下面 tips show on bottom.
+        elif self.direct in (self.bottom, self.bottom_left, self.bottom_right):
+            p_path.append((start, self.triangle_width))
+            p_path.append((start + self.triangle_width / 2, self.triangle_width - triangle_height))
+            p_path.append((start + self.triangle_width, self.triangle_width))
+        # 显示在左边 tips show on left.
+        elif self.direct in (self.left, self.left_top, self.left_bottom):
+            p_path.append((self.width() - self.triangle_width, start))
+            p_path.append((self.width() - self.triangle_width + triangle_height, start + self.triangle_width / 2))
+            p_path.append((self.width() - self.triangle_width, start + self.triangle_width))
+        # 显示在右边 tips show on right.
+        elif self.direct in (self.right, self.right_top, self.right_bottom):
+            p_path.append((self.triangle_width, start))
+            p_path.append((self.triangle_width - triangle_height, start + self.triangle_width / 2))
+            p_path.append((self.triangle_width, start + self.triangle_width))
+        else:
+            p_path = []
+
+        if p_path:
+            painter_path = QPainterPath()
+            painter_path.moveTo(*p_path[0])
+            for t_path in p_path[1:]:
+                painter_path.lineTo(*t_path)
+            painter_path.lineTo(*p_path[0])
+            painter.drawPath(painter_path)
+
+        return super(TooltipLabel, self).paintEvent(event)
 
 
 class ToolTip(QDialog):
     """单例"""
     instance = None
-    hideTimer: QBasicTimer
-    expireTimer: QBasicTimer
-    fadingOut: bool = False
-
-    styleSheetParent: QWidget
-    widget: QWidget = QWidget()
-    rect: QRect = QRect()
+    hideTimer = QBasicTimer()
+    expireTimer = QBasicTimer()
+    fadingOut = False
+    master = None
+    widget = None
+    rect = QRect()
     _text = ""
+    last_time = 0
 
-    def __init__(self, text: str, pos: QPoint, widget: QWidget, msecDisplayTime: int):
+    def __init__(self, text, widget, msecDisplayTime):
         super().__init__(widget, Qt.ToolTip | Qt.BypassGraphicsProxyWidget)
+        self.place()
+        self.configure()
+        self.reuseTip(text, msecDisplayTime)
+
+    def place(self):
+        """放置布局"""
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(*[1] * 4)
+        self.widget = TooltipLabel(self)
+        layout.addWidget(self.widget)
+        self.setLayout(layout)
+
+    def configure(self):
+        """配置"""
+        app = QApplication.instance()  # type: Union[QApplication,  QCoreApplication]
+        self.widget.setObjectName("tooltip_label")
+        self.widget.setWordWrap(True)
+        self.adjustSize()
+        self.widget.adjustSize()
         self.hideTimer = QBasicTimer()
         self.expireTimer = QBasicTimer()
-        # self.setForegroundRole(QPalette.ToolTipText)
-        # self.setBackgroundRole(QPalette.ToolTipBase)
-        # self.setPalette(QToolTip.palette())
-        # 给自己发送QEvent::Polish事件，同时递归调用子类的ensurePolished()函数
-        self.ensurePolished()
-        QApplication.instance().installEventFilter(self)
-        # self.setWindowOpacity(self.style().styleHint(QStyle.SH_ToolTipLabel_Opacity, None, self) / 255.0)
+        app.installEventFilter(self)
         self.setMouseTracking(True)
-
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setWindowFlag(Qt.FramelessWindowHint)
         self.fadingOut = False
-        self.reuseTip(text, msecDisplayTime, pos)
-        self.resize(200, 300)
+        app.setStyleSheet(app.styleSheet() + """
+        ToolTip{background: transparent;}
+                ToolTip TooltipLabel#tooltip_label{
+                border: none;
+                background: #303133;
+                padding-left: 10px;
+                padding-top: 8px;
+                padding-right: 7px;
+                padding-bottom: 9px;
+                margin: 10px;
+                font-size: 12px;
+                line-height: 1.2;
+                font-weight: bold;
+                color: #fefefe;
+                /* font: bold italic 18px "Microsoft YaHei"; */
+                }
+        """)
 
     def text(self):
         """返回文本"""
         return self._text
 
-    def setText(self, text: str):
+    def setText(self, text):
         """获取文本"""
         self._text = text
+        self.widget.setText(text)
 
-    def reuseTip(self, text: str, msecDisplayTime: int, pos: QPoint):
+    def reuseTip(self, text, msecDisplayTime):
         """复用tip，修改文本，显示时间，显示位置等"""
         self.setText(text)
         self.restartExpireTimer(msecDisplayTime)
+        self.updateSize()
+
+    def showNormal(self):
+        if time() > self.last_time + 1:
+            return super(ToolTip, self).showNormal()
 
     def hideTip(self):
         """隐藏提示框"""
@@ -61,69 +179,115 @@ class ToolTip(QDialog):
     def hideTipImmediately(self):
         """立即隐藏提tip"""
         self.hide()
-        # self.deleteLater()
-        # ToolTip.instance = None
+        self.last_time = time()
 
-    def setTipRect(self, widget: QWidget, rect: QRect):
+    def updateSize(self):
+        """更新位置及大小"""
+        fm = QFontMetrics(self.font())
+        sh = self.sizeHint()
+        extra = QSize(1, 0)
+        if fm.descent() == 2 and fm.ascent() >= 11:
+            extra.setHeight(extra.height() + 1)
+        self.resize(sh + extra)
+
+    def setTipRect(self, widget, rect):
         if not rect.isNull() and widget:
-            self.widget = widget
+            self.master = widget
             self.rect = rect
 
-    def restartExpireTimer(self, msecDisplayTime: int):
-        time = 10000 + 40 * max(0, len(self.text()) - 100)
+    def restartExpireTimer(self, msecDisplayTime):
+        time_ = 10000 + 40 * max(0, len(self.text()) - 100)
         if msecDisplayTime > 0:
-            time = msecDisplayTime
-        self.expireTimer.start(time, self)
+            time_ = msecDisplayTime
+        self.expireTimer.start(time_, self)
         self.hideTimer.stop()
 
-    def tipChanged(self, pos: QPoint, text: str, obj: QObject) -> bool:
+    def tipChanged(self, pos, text, obj):
         if ToolTip.instance.text() != text:
             return True
-        if obj != self.widget:
+        if obj != self.master:
             return True
         if not self.rect.isNull():
             return not self.rect.contains(pos)
         return False
 
-    def placeTip(self, pos: QPoint, widget: QWidget):
-        """放置tip"""
-        screen = self.getTipScreen(pos, widget)
-
-        # if screen:
-        #     platformScreen = screen.handle()
+    def placeTip(self, pos, widget):
+        """放置tip, 计算十二个边界，哪边的空位最大就显示在哪一边"""
+        screen = QGuiApplication.primaryScreen()
+        max_y, max_x = screen.size().height(), screen.size().width()
+        global_pos = widget.mapToGlobal(widget.pos())
+        x, y = global_pos.x() / 2, global_pos.y() / 2
+        top_left, top, top_right, bottom_left, bottom, bottom_right, \
+        left_top, left, left_bottom, right_top, right, right_bottom = range(12)
+        # 以tip显示结果作为key
+        area = {
+            left_top: x * (y + widget.height()),  # 左边往上
+            left_bottom: x * (max_y - y),  # 左边往下
+            top_right: (x + widget.width()) * y,  # 上边往左
+            top_left: (max_x - x) * y,  # 上边往右
+            right_top: (max_x - x - widget.width()) * (y + widget.height()),  # 右边往上
+            right_bottom: (max_x - x - widget.width()) * (max_y - y),  # 右边往下
+            bottom_left: (max_y - y - widget.height()) * (max_x - x),  # 下边往右
+            bottom_right: (max_y - y - widget.height()) * (x + widget.width()),  # 下边往左
+            top: (max_x * y) * 0.75,
+            bottom: ((max_y - y - widget.height()) * max_x) * 0.75,
+            left: (x * max_y) * 0.75,
+            right: ((max_x - x - widget.width()) * max_y) * 0.75
+        }
+        area_tag, area_size = sorted(area.items(), key=lambda kv: (kv[1], kv[0]), reverse=True)[0]
+        self.widget.setDirection(area_tag)
+        if widget.parent():
+            pos = widget.parent().mapToGlobal(widget.pos())
+            if area_tag in (top_left, top, top_right):
+                pos += QPoint(0, - widget.height())
+            elif area_tag in (bottom_left, bottom, bottom_right):
+                pos += QPoint(0, widget.height())
+            elif area_tag in (right_top, right, right_bottom):
+                pos += QPoint(widget.width() + 5, 0)
+            elif area_tag in (left_top, left, left_bottom):
+                pos += QPoint(- self.widget.width() - 5, 0)
+        else:
+            screen = screen.geometry()
+            self.widget.setDirection(13)
+            pos += QPoint(5, -21)
+            if pos.x() + self.width() > screen.x() + screen.width():
+                pos.setX(pos.x() - 4 + self.width())
+            if pos.y() + self.height() > screen.y() + screen.height():
+                pos.setY(pos.y() - 24 + self.height())
+            if pos.y() < screen.y():
+                pos.setY(screen.y())
+            if pos.x() + self.width() > screen.x() + screen.width():
+                pos.setX(screen.x() + screen.width() - self.width())
+            if pos.x() < screen.x():
+                pos.setX(screen.x())
+            if pos.y() + self.height() > screen.y() + screen.height():
+                pos.setY(screen.y() + screen.height() - self.height())
+        self.move(pos)
 
     @staticmethod
-    def getTipScreen(pos: QPoint, widget: QWidget) -> QScreen:
+    def getTipScreen(pos, widget):
         """获取提示屏幕"""
         guess = widget.screen() if widget else QGuiApplication.primaryScreen()
         exact = guess.virtualSiblingAt(pos)
         return exact or guess
 
-    def timerEvent(self, event: QTimerEvent) -> None:
+    def timerEvent(self, event):
         event_time_id = event.timerId()
         if event_time_id == self.hideTimer.timerId() or event_time_id == self.expireTimer.timerId():
             self.hideTimer.stop()
             self.expireTimer.stop()
             self.hideTipImmediately()
 
-    def paintEvent(self, event: QPaintEvent) -> None:
-        p = QStylePainter(self)
-        opt = QStyleOptionFrame()
-        opt.initFrom(self)
-        p.drawPrimitive(QStyle.PE_PanelTipLabel, opt)
-        p.end()
-        super(ToolTip, self).paintEvent(event)
-
-    def mouseMoveEvent(self, event: QMouseEvent) -> None:
+    def mouseMoveEvent(self, event):
         if not self.rect.isNull():
             pos = event.globalPos()
-            if self.widget:
-                pos = self.widget.mapFromGlobal(pos)
+            if self.master:
+                pos = self.master.mapFromGlobal(pos)
             if not self.rect.contains(pos):
                 self.hideTip()
         super(ToolTip, self).mouseMoveEvent(event)
 
-    def resizeEvent(self, event: QResizeEvent) -> None:
+    def resizeEvent(self, event):
         frameMask = QStyleHintReturnMask()
         option = QStyleOption()
         option.initFrom(self)
@@ -132,10 +296,9 @@ class ToolTip(QDialog):
 
         super(ToolTip, self).resizeEvent(event)
 
-    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
+    def eventFilter(self, obj, event):
         event_type = event.type()
         if event_type in (QEvent.KeyPress, QEvent.KeyRelease):
-            event: QKeyEvent
             key = event.key()
             if key < Qt.Key_Shift or key > Qt.Key_ScrollLock:
                 self.hideTipImmediately()
@@ -160,8 +323,7 @@ class ToolTip(QDialog):
                             QEvent.Wheel):
             self.hideTipImmediately()
         elif event_type == QEvent.MouseMove:
-            event: QMouseEvent
-            if obj == self.widget and not self.rect.isNull() and not self.rect.contains(event.pos()):
+            if obj == self.master and not self.rect.isNull() and not self.rect.contains(event.pos()):
                 self.hideTip()
         return False
 
@@ -174,11 +336,13 @@ class CustomTooltip:
 
     # noinspection SpellCheckingInspection
     @staticmethod
-    def showText(pos: QPoint, text: str, widget: QWidget = None, rect: QRect = QRect(), msecShowTime: int = -1):
-        # instance use ToolTip.instance or new.
-        instance: ToolTip = ToolTip.instance
+    def showText(pos, text, widget=None, rect=QRect(), msecShowTime=-1):
+        """
+        instance use ToolTip.instance or new.
+        """
+        instance = ToolTip.instance
         if not instance:
-            instance = ToolTip.instance = ToolTip(text, pos, widget, msecShowTime)
+            instance = ToolTip.instance = ToolTip(text, widget, msecShowTime)
         if instance.isVisible():
             if not text:
                 instance.hideTip()
@@ -188,12 +352,12 @@ class CustomTooltip:
                 if widget:
                     localPos = widget.mapFromGlobal(pos)
                 if instance.tipChanged(localPos, text, widget):
-                    instance.reuseTip(text, msecShowTime, pos)
+                    instance.reuseTip(text, msecShowTime)
                     instance.setTipRect(widget, rect)
                     instance.placeTip(pos, widget)
                 return
         elif text:
-            instance.reuseTip(text, msecShowTime, pos)
+            instance.reuseTip(text, msecShowTime)
             instance.setTipRect(widget, rect)
             instance.placeTip(pos, widget)
             instance.setObjectName("qtooltip_label")
@@ -204,28 +368,28 @@ class CustomTooltip:
         CustomTooltip.showText(QPoint(), "")
 
     @staticmethod
-    def isVisible() -> bool:
+    def isVisible():
         return ToolTip.instance and ToolTip.instance.isVisible()
 
     @staticmethod
-    def text() -> str:
+    def text():
         return ToolTip.instance.text() if ToolTip.instance else ""
 
     @staticmethod
-    def palette() -> QPalette:
+    def palette():
         return CustomTooltip.tooltip_palette
 
     @staticmethod
-    def setPalette(palette: QPalette):
+    def setPalette(palette):
         CustomTooltip.tooltip_palette = palette
-        instance: ToolTip = ToolTip.instance
+        instance = ToolTip.instance
         if instance:
             instance.setPalette(palette)
 
     @staticmethod
-    def font() -> QFont:
-        return QApplication.font("QTipLabel")
+    def font():
+        return QApplication.font("Tooltip")
 
     @staticmethod
-    def setFont(font: QFont):
-        QApplication.setFont(font, "QTipLabel")
+    def setFont(font):
+        QApplication.setFont(font, "Tooltip")
