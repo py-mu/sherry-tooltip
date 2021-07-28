@@ -168,7 +168,7 @@ class ToolTip(QDialog):
         self.updateSize()
 
     def showNormal(self):
-        if time() > self.last_time + 1:
+        if time() > self.last_time + 0.5:
             return super(ToolTip, self).showNormal()
 
     def hideTip(self):
@@ -236,7 +236,7 @@ class ToolTip(QDialog):
         }
         area_tag, area_size = sorted(area.items(), key=lambda kv: (kv[1], kv[0]), reverse=True)[0]
         self.widget.setDirection(area_tag)
-        if widget.parent():
+        if widget.parent() and area_size > self.width() * self.height():
             pos = widget.parent().mapToGlobal(widget.pos())
             if area_tag in (top_left, top, top_right):
                 pos += QPoint(0, - widget.height())
