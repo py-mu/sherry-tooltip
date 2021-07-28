@@ -2,7 +2,7 @@
 
 # 简介
 
-> 通过反射将原本的的tooltip反射成自定义的弹窗样式
+> 通过反射将原本的的tooltip反射成自定义的弹窗样式。
 
 ![](demo.jpg)
 
@@ -23,6 +23,7 @@ from sherry_tooltip import TooltipAgent
 TaskDispatcher.update({
     "tooltip_hook": (TooltipAgent, (), {}),
 })
+
 ```
 
 3. 启动你的项目即可实现tooltip hook
@@ -64,3 +65,7 @@ if __name__ == '__main__':
     sys.exit(app.exit())
 
 ```
+
+# 如何使用自定义的tooltip？
+
+继承ToolTip或者CustomTooltip在你想修改的方法上进行重写
