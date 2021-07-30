@@ -19,6 +19,7 @@ class TooltipAgent(BaseAgent):
     """反射器"""
 
     __agent__ = ('installer',)
+    tooltip = Badge(source=CustomTooltip, return_class=True)
 
     @staticmethod
     def _register_tooltip(obj):
@@ -27,8 +28,7 @@ class TooltipAgent(BaseAgent):
 
         def graft(widget, event):
             if event.type() == QEvent.ToolTip and widget.toolTip():
-                tooltip = Badge(source=CustomTooltip, return_class=True)
-                tooltip.showText(event.globalPos(), widget.toolTip(), widget, QRect(), widget.toolTipDuration())
+                TooltipAgent.tooltip.showText(event.globalPos(), widget.toolTip(), widget, QRect(), widget.toolTipDuration())
                 return True
             return primeval_event_function(widget, event)
 
