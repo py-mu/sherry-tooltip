@@ -231,18 +231,18 @@ class ToolTip(QDialog):
         left_top, left, left_bottom, right_top, right, right_bottom = range(12)
         # 以tip显示结果作为key
         area = {
-            # left_top: x * (y + widget.height()),  # 左边往上
-            # left_bottom: x * (max_y - y),  # 左边往下
-            # top_right: (x + widget.width()) * y,  # 上边往左
-            # top_left: (max_x - x) * y,  # 上边往右
-            # right_top: (max_x - x - widget.width()) * (y + widget.height()),  # 右边往上
-            # right_bottom: (max_x - x - widget.width()) * (max_y - y),  # 右边往下
-            # bottom_left: (max_y - y - widget.height()) * (max_x - x),  # 下边往右
-            # bottom_right: (max_y - y - widget.height()) * (x + widget.width()),  # 下边往左
-            # top: (max_x * y),
+            left_top: x * (y + widget.height()),  # 左边往上
+            left_bottom: x * (max_y - y),  # 左边往下
+            top_right: (x + widget.width()) * y,  # 上边往左
+            top_left: (max_x - x) * y,  # 上边往右
+            right_top: (max_x - x - widget.width()) * (y + widget.height()),  # 右边往上
+            right_bottom: (max_x - x - widget.width()) * (max_y - y),  # 右边往下
+            bottom_left: (max_y - y - widget.height()) * (max_x - x),  # 下边往右
+            bottom_right: (max_y - y - widget.height()) * (x + widget.width()),  # 下边往左
+            top: (max_x * y),
             bottom: ((max_y - y - widget.height()) * max_x),
-            # left: (x * max_y),
-            # right: ((max_x - x - widget.width()) * max_y)
+            left: (x * max_y),
+            right: ((max_x - x - widget.width()) * max_y)
         }
         # 排序得到空间最大的区域
         area_tag, area_size = sorted(area.items(), key=lambda kv: (kv[1], kv[0]), reverse=True)[0]
