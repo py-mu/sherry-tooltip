@@ -4,9 +4,10 @@
     on 2021/7/16
     at 16:39
 """
+from typing import Tuple
 
-from PyQt5.QtCore import QPoint, QRect, QEvent, QObject, QBasicTimer, Qt, QTimerEvent
-from PyQt5.QtGui import QPalette, QFont, QScreen, QPaintEvent, QMouseEvent, QResizeEvent
+from PyQt5.QtCore import QPoint, QRect, QObject, QBasicTimer, Qt
+from PyQt5.QtGui import QPalette, QFont, QScreen
 from PyQt5.QtWidgets import QWidget, QDialog, QLabel
 
 
@@ -24,6 +25,7 @@ class TooltipLabel(QLabel):
     def set_triangle_width(self, width: int):
         ...
 
+
 class ToolTip(QDialog):
     instance: ToolTip
     hideTimer: QBasicTimer
@@ -33,7 +35,7 @@ class ToolTip(QDialog):
     rect: QRect
     _text: str
     widget: TooltipLabel
-    last_time: int
+    tip_pos_widget = Tuple[QPoint, QWidget]
 
     def __init__(self, text: str, widget: QWidget, msecDisplayTime: int):
         super().__init__(widget, Qt.ToolTip | Qt.BypassGraphicsProxyWidget)
@@ -52,7 +54,6 @@ class ToolTip(QDialog):
 
     def reuseTip(self, text: str, msecDisplayTime: int):
         ...
-
 
     def hideTip(self):
         ...
