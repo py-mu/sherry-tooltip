@@ -9,5 +9,5 @@ try:
 except ImportError:
     from sherry_tooltip.primary_injector import TooltipAgent
 
-version = (1, 0, 12)
+version = (1, 0, 15)
 __all__ = ('TooltipAgent', 'version')

@@ -284,17 +284,11 @@ class ToolTip(QDialog):
             area_tag = 13
             pos += QPoint(5, -21)
             if pos.x() + self.width() > screen.x() + screen.width():
-                pos.setX(pos.x() - 4 + self.width())
+                pos.setX(pos.x() - self.width())
             if pos.y() + self.height() > screen.y() + screen.height():
-                pos.setY(pos.y() - 24 + self.height())
+                pos.setY(pos.y() - self.height())
             if pos.y() < screen.y():
                 pos.setY(screen.y())
-            if pos.x() + self.width() > screen.x() + screen.width():
-                pos.setX(screen.x() + screen.width() - self.width())
-            if pos.x() < screen.x():
-                pos.setX(screen.x())
-            if pos.y() + self.height() > screen.y() + screen.height():
-                pos.setY(screen.y() + screen.height() - self.height())
         self.widget.setDirection(area_tag)
         self.move(pos)
 
