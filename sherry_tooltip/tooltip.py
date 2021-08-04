@@ -133,7 +133,7 @@ class ToolTip(QDialog):
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setWindowFlag(Qt.FramelessWindowHint)
         self.fadingOut = False
-        app.setStyleSheet(app.styleSheet() + """
+        app.setStyleSheet("""
         ToolTip{border: 1px solid red;}
         ToolTip TooltipLabel#tooltip_label{
             border: none;
@@ -149,7 +149,7 @@ class ToolTip(QDialog):
             color: #fefefe;
             /* font: bold italic 18px "Microsoft YaHei"; */
         }
-        """)
+        """ + app.styleSheet())
 
     def text(self):
         """返回文本"""
