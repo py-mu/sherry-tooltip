@@ -4,6 +4,7 @@
     on 2021/7/16
     at 16:39
 """
+import logging
 import math
 from typing import Union
 
@@ -165,10 +166,17 @@ class ToolTip(QDialog):
         self.setText(text)
         self.restartExpireTimer(msecDisplayTime)
 
-    def showNormal(self):
+
+    def show_(self, tip_position=None, tip_arrow_direction=None):
+        """
+        显示tooltip
+
+        :param tip_position: 要显示的方位(0-12)
+        :param tip_arrow_direction: 显示的箭头类型(0-12/其它无箭头)
+        """
         self.setVisible(True)
         self.updateSize()
-        self._placeTip()
+        self._placeTip(tip_position, tip_arrow_direction)
 
     def hideTip(self):
         """隐藏提示框"""
@@ -200,23 +208,13 @@ class ToolTip(QDialog):
         self.expireTimer.start(time_, self)
         self.hideTimer.stop()
 
-    def tipChanged(self, pos, text, obj):
-        print(self.text(), text)
-        if self.text() != text:
-            return True
-        if obj != self.master:
-            return True
-        if not self.rect.isNull():
-            return not self.rect.contains(pos)
-        return False
-
     def placeTip(self, pos, widget):
         """
         放置tip, 计算十二个边界，哪边的空位最大就显示在哪一边
         """
         self.tip_pos_widget = pos, widget
 
-    def _placeTip(self):
+    def _placeTip(self, tip_position=None, tip_arrow_direction=None):
         """
         在显示之后再进行移动
 
@@ -246,6 +244,7 @@ class ToolTip(QDialog):
         }
         # 排序得到空间最大的区域
         area_tag, area_size = sorted(area.items(), key=lambda kv: (kv[1], kv[0]), reverse=True)[0]
+        area_tag = tip_position or area_tag
         if widget.parent() and area_size > self.width() * self.height():
             # 相对坐标
             tooltip_height = self.widget.height()
@@ -289,7 +288,7 @@ class ToolTip(QDialog):
                 pos.setY(pos.y() - self.height())
             if pos.y() < screen.y():
                 pos.setY(screen.y())
-        self.widget.setDirection(area_tag)
+        self.widget.setDirection(tip_arrow_direction or area_tag)
         self.move(pos)
 
     @staticmethod
@@ -377,6 +376,9 @@ class CustomTooltip:
     """
     tooltip_palette = QToolTip.palette()
 
+    TOOLTIP_POSITION_KEY = '_sherry_tooltip_position'
+    TOOLTIP_ARROW_DIRECTION_KEY = '_sherry_tooltip_arrow_direction'
+
     # noinspection SpellCheckingInspection
     @staticmethod
     def showText(pos, text, widget=None, rect=QRect(), msecShowTime=-1):
@@ -395,7 +397,23 @@ class CustomTooltip:
             instance.setTipRect(widget, rect)
             instance.placeTip(pos, widget)
             instance.setObjectName("qtooltip_label")
-            instance.showNormal()
+            instance.show_(*CustomTooltip._get_tip_attr(widget))
+
+    @staticmethod
+    def _get_tip_attr(obj):
+        """获取内联参数"""
+        tip_position, tip_arrow_direct = None, None
+        position_key, direction_key = CustomTooltip.TOOLTIP_POSITION_KEY, CustomTooltip.TOOLTIP_ARROW_DIRECTION_KEY
+        if hasattr(obj, direction_key):
+            tip_arrow_direct = getattr(obj, direction_key)
+        if hasattr(obj, position_key):
+            tip_position = getattr(obj, position_key)
+            if not 0 <= tip_position <= 12:
+                logging.warning('setter object {} ValueError "_sherry_tooltip_position". '
+                                'The value should be between 0 and 12, but {}. '
+                                'Currently assigned as None.'.format(obj, tip_position))
+                tip_position = None
+        return tip_position, tip_arrow_direct
 
     @staticmethod
     def hideText():

@@ -6,7 +6,7 @@
 """
 from typing import Tuple
 
-from PyQt5.QtCore import QPoint, QRect, QObject, QBasicTimer, Qt
+from PyQt5.QtCore import QPoint, QRect, QBasicTimer, Qt
 from PyQt5.QtGui import QPalette, QFont, QScreen
 from PyQt5.QtWidgets import QWidget, QDialog, QLabel
 
@@ -55,6 +55,8 @@ class ToolTip(QDialog):
     def reuseTip(self, text: str, msecDisplayTime: int):
         ...
 
+    def show_(self, tip_position=None, tip_arrow_direction=None): ...
+
     def hideTip(self):
         ...
 
@@ -70,9 +72,6 @@ class ToolTip(QDialog):
     def restartExpireTimer(self, msecDisplayTime: int):
         ...
 
-    def tipChanged(self, pos: QPoint, text: str, obj: QObject) -> bool:
-        ...
-
     def placeTip(self, pos: QPoint, widget: QWidget):
         ...
 
@@ -85,11 +84,16 @@ class CustomTooltip:
     可以更换提示类型的
     """
     tooltip_palette: QPalette
+    TOOLTIP_POSITION_KEY: str
+    TOOLTIP_ARROW_DIRECTION_KEY: str
 
     # noinspection SpellCheckingInspection
     @staticmethod
     def showText(pos: QPoint, text: str, widget: QWidget = None, rect: QRect = QRect(), msecShowTime: int = -1):
         ...
+
+    @staticmethod
+    def _get_tip_attr(obj: QWidget) -> Tuple: ...
 
     @staticmethod
     def hideText(): ...
