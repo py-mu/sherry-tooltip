@@ -4,7 +4,7 @@
 
 > 通过反射将原本的的tooltip反射成自定义的弹窗样式。
 
-![](https://github.com/py-mu/sherry-tooltip/raw/master/demo.jpg)
+![](https://sherry-docs.vercel.app/resource/sherry-tooltip/image/demo.jpg)
 
 # 使用
 

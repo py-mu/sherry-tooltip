@@ -112,7 +112,7 @@ class ToolTip(QDialog):
 
     def show_(self, tip_position=None, tip_arrow_direction=None):
         """
-        显示tooltip
+        显示tooltip fixme 显示的过程会出现闪动是因为需要显示，才能知道内容的大小才进行计算
 
         :param tip_position: 要显示的方位(0-12)
         :param tip_arrow_direction: 显示的箭头类型(0-12/其它无箭头)
